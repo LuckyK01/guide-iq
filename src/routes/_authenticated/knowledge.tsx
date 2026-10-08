@@ -45,7 +45,7 @@ function Knowledge() {
   async function runAI(id: string) {
     setBusyId(id);
     try { await process({ data: { id } }); toast.success("AI suggestions ready for review"); qc.invalidateQueries({ queryKey: ["knowledge"] }); }
-    catch (e) { toast.error((e as Error).message); return; } }
+    catch (e) { toast.error((e as Error).message); }
     finally { setBusyId(null); }
   }
   async function submitForReview(id: string, title: string) {
