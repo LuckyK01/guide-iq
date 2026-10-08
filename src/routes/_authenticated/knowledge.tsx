@@ -45,12 +45,12 @@ function Knowledge() {
   async function runAI(id: string) {
     setBusyId(id);
     try { await process({ data: { id } }); toast.success("AI suggestions ready for review"); qc.invalidateQueries({ queryKey: ["knowledge"] }); }
-    catch (e) { toast.error((e as Error).message); }
+    catch (e) { toast.error((e as Error).message); return; } }
     finally { setBusyId(null); }
   }
   async function submitForReview(id: string, title: string) {
     const { error } = await supabase.from("knowledge_items").update({ status: "pending_review" }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await logAudit("submitted_for_review", "knowledge", id, title);
     qc.invalidateQueries({ queryKey: ["knowledge"] });
   }
@@ -106,14 +106,14 @@ function NewItem({ onDone, owner }: { onDone: () => void; owner: string }) {
   const [f, setF] = useState({ title: "", content_type: "Policy", category: "", tags: "", source: "", team: "All", body: "" });
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (f.title.trim().length < 3 || f.body.trim().length < 20) return toast.error("Add a title and at least 20 characters of content.");
+    if (f.title.trim().length < 3 || f.body.trim().length < 20) { toast.error("Add a title and at least 20 characters of content."); return; }
     const { data: u } = await supabase.auth.getUser();
     const { data, error } = await supabase.from("knowledge_items").insert({
       title: f.title.trim().slice(0, 200), content_type: f.content_type, category: f.category.slice(0, 80), team: f.team.slice(0, 80),
       tags: f.tags.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 10), source: f.source.slice(0, 300), body: f.body.slice(0, 20000),
       owner_id: u.user!.id, owner_name: owner,
     }).select("id").single();
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await logAudit("uploaded", "knowledge", data.id, f.title);
     toast.success("Draft created"); setOpen(false); onDone();
     setF({ title: "", content_type: "Policy", category: "", tags: "", source: "", team: "All", body: "" });

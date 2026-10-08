@@ -71,7 +71,7 @@ Reply with JSON only: {"found":boolean,"answer":"markdown answer, concise","sour
 
     if (!ok) {
       const { data: prof } = await supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle();
-      await supabase.from("mentor_escalations").insert({ user_id: userId, user_name: prof?.full_name, question: data.question, reason: parsed ? `low confidence (${parsed.confidence})` : "no answer" });
+      await supabase.from("mentor_escalations").insert({ user_id: userId, user_name: prof?.full_name ?? null, question: data.question, reason: parsed ? `low confidence (${parsed.confidence})` : "no answer" });
       await audit("ai_escalated", { model: AI_MODEL, confidence: parsed?.confidence ?? 0 });
       return { answer: FALLBACK, sources: [], modules: [], confidence: parsed?.confidence ?? 0, escalated: true };
     }

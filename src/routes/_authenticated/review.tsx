@@ -48,17 +48,17 @@ function Review() {
     if (!item) return;
     const edited = body.trim() !== item.body.trim();
     const now = new Date().toISOString();
-    const patch: Record<string, unknown> = { reviewer_name: me!.name, review_comment: comment || null, updated_at: now };
+    const patch: any = { reviewer_name: me!.name, review_comment: comment || null, updated_at: now };
     if (action === "approve") Object.assign(patch, { status: "approved", approved_at: now, last_reviewed: now.slice(0, 10) });
     if (action === "publish") Object.assign(patch, { status: "published", approved_at: item.approved_at ?? now, last_reviewed: now.slice(0, 10) });
     if (action === "reject") Object.assign(patch, { status: "draft" });
     if (action === "changes") Object.assign(patch, { status: "draft" });
-    if ((action === "reject" || action === "changes") && !comment.trim()) return toast.error("Add a comment explaining the decision.");
+    if ((action === "reject" || action === "changes") && !comment.trim()) { toast.error("Add a comment explaining the decision."); return; }
     if (edited) Object.assign(patch, { body, version: item.version + 1 });
     // Snapshot previous version before change — approved content is never silently overwritten.
     await supabase.from("knowledge_versions").insert({ item_id: item.id, version: item.version, title: item.title, body: item.body, status: item.status, changed_by: me!.name, note: `${action}${comment ? `: ${comment}` : ""}` });
     const { error } = await supabase.from("knowledge_items").update(patch).eq("id", item.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await logAudit(action === "changes" ? "requested_changes" : action === "approve" ? "approved" : action === "publish" ? "published" : "rejected", "knowledge", item.id, item.title, {
       before: { status: item.status, version: item.version }, after: { status: patch.status, version: patch.version ?? item.version }, comment,
     });

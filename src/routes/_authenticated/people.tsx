@@ -45,7 +45,7 @@ function People() {
     const { error } = has
       ? await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", role)
       : await supabase.from("user_roles").insert({ user_id: uid, role });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await logAudit(has ? "role_revoked" : "role_granted", "user", uid, name, { role });
     qc.invalidateQueries({ queryKey: ["people"] });
   }
@@ -53,7 +53,7 @@ function People() {
   async function saveProfile(p: Profile) {
     const { id, email: _e, ...rest } = p;
     const { error } = await supabase.from("profiles").update(rest).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await logAudit("profile_updated", "user", id, p.full_name);
     toast.success("Profile saved"); setEdit(null); qc.invalidateQueries({ queryKey: ["people"] });
   }
