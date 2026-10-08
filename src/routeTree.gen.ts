@@ -13,9 +13,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAssessmentsRouteImport } from './routes/_authenticated/assessments'
+import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedJourneyRouteImport } from './routes/_authenticated/journey'
+import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated/knowledge'
 import { Route as AuthenticatedMentorRouteImport } from './routes/_authenticated/mentor'
+import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
+import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedModulesIndexRouteImport } from './routes/_authenticated/modules.index'
 import { Route as AuthenticatedModulesIdRouteImport } from './routes/_authenticated/modules.$id'
 
@@ -39,6 +43,11 @@ const AuthenticatedAssessmentsRoute =
     path: '/assessments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -49,9 +58,24 @@ const AuthenticatedJourneyRoute = AuthenticatedJourneyRouteImport.update({
   path: '/journey',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedKnowledgeRoute = AuthenticatedKnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMentorRoute = AuthenticatedMentorRouteImport.update({
   id: '/mentor',
   path: '/mentor',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPeopleRoute = AuthenticatedPeopleRouteImport.update({
+  id: '/people',
+  path: '/people',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedModulesIndexRoute =
@@ -70,9 +94,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/assessments': typeof AuthenticatedAssessmentsRoute
+  '/audit': typeof AuthenticatedAuditRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/journey': typeof AuthenticatedJourneyRoute
+  '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/mentor': typeof AuthenticatedMentorRoute
+  '/people': typeof AuthenticatedPeopleRoute
+  '/review': typeof AuthenticatedReviewRoute
   '/modules/$id': typeof AuthenticatedModulesIdRoute
   '/modules/': typeof AuthenticatedModulesIndexRoute
 }
@@ -80,9 +108,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/assessments': typeof AuthenticatedAssessmentsRoute
+  '/audit': typeof AuthenticatedAuditRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/journey': typeof AuthenticatedJourneyRoute
+  '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/mentor': typeof AuthenticatedMentorRoute
+  '/people': typeof AuthenticatedPeopleRoute
+  '/review': typeof AuthenticatedReviewRoute
   '/modules/$id': typeof AuthenticatedModulesIdRoute
   '/modules': typeof AuthenticatedModulesIndexRoute
 }
@@ -92,9 +124,13 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/assessments': typeof AuthenticatedAssessmentsRoute
+  '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/journey': typeof AuthenticatedJourneyRoute
+  '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
   '/_authenticated/mentor': typeof AuthenticatedMentorRoute
+  '/_authenticated/people': typeof AuthenticatedPeopleRoute
+  '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/modules/$id': typeof AuthenticatedModulesIdRoute
   '/_authenticated/modules/': typeof AuthenticatedModulesIndexRoute
 }
@@ -104,9 +140,13 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/assessments'
+    | '/audit'
     | '/dashboard'
     | '/journey'
+    | '/knowledge'
     | '/mentor'
+    | '/people'
+    | '/review'
     | '/modules/$id'
     | '/modules/'
   fileRoutesByTo: FileRoutesByTo
@@ -114,9 +154,13 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/assessments'
+    | '/audit'
     | '/dashboard'
     | '/journey'
+    | '/knowledge'
     | '/mentor'
+    | '/people'
+    | '/review'
     | '/modules/$id'
     | '/modules'
   id:
@@ -125,9 +169,13 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/assessments'
+    | '/_authenticated/audit'
     | '/_authenticated/dashboard'
     | '/_authenticated/journey'
+    | '/_authenticated/knowledge'
     | '/_authenticated/mentor'
+    | '/_authenticated/people'
+    | '/_authenticated/review'
     | '/_authenticated/modules/$id'
     | '/_authenticated/modules/'
   fileRoutesById: FileRoutesById
@@ -168,6 +216,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAssessmentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/audit': {
+      id: '/_authenticated/audit'
+      path: '/audit'
+      fullPath: '/audit'
+      preLoaderRoute: typeof AuthenticatedAuditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -182,11 +237,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedJourneyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/knowledge': {
+      id: '/_authenticated/knowledge'
+      path: '/knowledge'
+      fullPath: '/knowledge'
+      preLoaderRoute: typeof AuthenticatedKnowledgeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mentor': {
       id: '/_authenticated/mentor'
       path: '/mentor'
       fullPath: '/mentor'
       preLoaderRoute: typeof AuthenticatedMentorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/people': {
+      id: '/_authenticated/people'
+      path: '/people'
+      fullPath: '/people'
+      preLoaderRoute: typeof AuthenticatedPeopleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/review': {
+      id: '/_authenticated/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof AuthenticatedReviewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/modules/': {
@@ -208,18 +284,26 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAssessmentsRoute: typeof AuthenticatedAssessmentsRoute
+  AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedJourneyRoute: typeof AuthenticatedJourneyRoute
+  AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
   AuthenticatedMentorRoute: typeof AuthenticatedMentorRoute
+  AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
+  AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedModulesIdRoute: typeof AuthenticatedModulesIdRoute
   AuthenticatedModulesIndexRoute: typeof AuthenticatedModulesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAssessmentsRoute: AuthenticatedAssessmentsRoute,
+  AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedJourneyRoute: AuthenticatedJourneyRoute,
+  AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
   AuthenticatedMentorRoute: AuthenticatedMentorRoute,
+  AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
+  AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedModulesIdRoute: AuthenticatedModulesIdRoute,
   AuthenticatedModulesIndexRoute: AuthenticatedModulesIndexRoute,
 }

@@ -33,7 +33,7 @@ function Journey() {
           {(["mandatory", "role", "experience"] as const).map((t) => {
             const list = (mods ?? []).filter((m) => m.track === t);
             return (
-              <Panel key={t} title={TRACK_LABEL[t]} action={t === "mandatory" ? <Pill tone="primary">Required</Pill> : undefined}>
+              <Panel key={t} title={TRACK_LABEL[t] ?? t} action={t === "mandatory" ? <Pill tone="primary">Required</Pill> : undefined}>
                 {list.length === 0 ? <Empty>No modules in this track.</Empty> : (
                   <ol className="space-y-2">
                     {list.map((m, i) => (

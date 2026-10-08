@@ -41,7 +41,7 @@ export async function logAudit(action: string, resource_type: string, resource_i
   const { data: p } = await supabase.from("profiles").select("full_name").eq("id", u.user.id).maybeSingle();
   await supabase.from("audit_logs").insert({
     actor_id: u.user.id,
-    actor_name: p?.full_name || u.user.email,
+    actor_name: p?.full_name || u.user.email || null,
     action,
     resource_type,
     resource_id,
