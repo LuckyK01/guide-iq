@@ -1,0 +1,4 @@
+alter table public.knowledge_items add column if not exists source_file_path text, add column if not exists source_file_name text, add column if not exists source_file_type text;
+create policy "Staff read knowledge files" on storage.objects for select to authenticated using (bucket_id='knowledge-files' and public.is_staff(auth.uid()));
+create policy "Staff upload knowledge files" on storage.objects for insert to authenticated with check (bucket_id='knowledge-files' and public.is_staff(auth.uid()));
+create policy "Staff delete knowledge files" on storage.objects for delete to authenticated using (bucket_id='knowledge-files' and public.is_staff(auth.uid()));

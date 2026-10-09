@@ -72,6 +72,9 @@ export type Database = {
           review_due: string | null
           reviewer_name: string | null
           source: string | null
+          source_file_name: string | null
+          source_file_path: string | null
+          source_file_type: string | null
           status: Database["public"]["Enums"]["knowledge_status"]
           tags: string[]
           team: string | null
@@ -100,6 +103,9 @@ export type Database = {
           review_due?: string | null
           reviewer_name?: string | null
           source?: string | null
+          source_file_name?: string | null
+          source_file_path?: string | null
+          source_file_type?: string | null
           status?: Database["public"]["Enums"]["knowledge_status"]
           tags?: string[]
           team?: string | null
@@ -128,6 +134,9 @@ export type Database = {
           review_due?: string | null
           reviewer_name?: string | null
           source?: string | null
+          source_file_name?: string | null
+          source_file_path?: string | null
+          source_file_type?: string | null
           status?: Database["public"]["Enums"]["knowledge_status"]
           tags?: string[]
           team?: string | null
