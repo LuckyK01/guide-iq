@@ -43,7 +43,7 @@ export async function extractLocal(file: File): Promise<string> {
       const rows = xml.split(/<\/row>/).map((r) =>
         [...r.matchAll(/<c([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)].map((c) => {
           const v = c[2]?.match(/<v>([^<]*)<\/v>/)?.[1] ?? c[2]?.match(/<t[^>]*>([^<]*)<\/t>/)?.[1] ?? "";
-          return /t="s"/.test(c[1]) ? shared[Number(v)] ?? "" : decode(v);
+          return /t="s"/.test(c[1] ?? "") ? shared[Number(v)] ?? "" : decode(v);
         }).join(" | "),
       ).filter((r) => r.replace(/[\s|]/g, ""));
       parts.push(`## Sheet ${i + 1}\n` + rows.join("\n"));
