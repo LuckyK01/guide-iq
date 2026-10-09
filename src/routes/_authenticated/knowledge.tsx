@@ -123,7 +123,7 @@ function NewItem({ onDone, owner }: { onDone: () => void; owner: string }) {
     try {
       const { data: u } = await supabase.auth.getUser();
       const path = `${u.user!.id}/${crypto.randomUUID()}-${picked.name.replace(/[^\w.\-]+/g, "_").slice(-120)}`;
-      const { error: upErr } = await supabase.storage.from("knowledge-files").upload(path, picked, { contentType: picked.type || undefined });
+      const { error: upErr } = await supabase.storage.from("knowledge-files").upload(path, picked, { contentType: picked.type || "application/octet-stream" });
       if (upErr) throw new Error(upErr.message);
       const mediaType = picked.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : picked.type;
       const text = kind === "ocr" ? (await extract({ data: { path, mediaType } })).text : await extractLocal(picked);
