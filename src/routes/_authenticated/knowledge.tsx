@@ -19,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PageHeader, StatusPill, Loading, Empty, Denied, Pill } from "@/components/app-ui";
 
 export const Route = createFileRoute("/_authenticated/knowledge")({
-  head: () => ({ meta: [{ title: "Knowledge Hub — MentorMatch" }, { name: "description", content: "Central library of organisational knowledge." }] }),
+  head: () => ({ meta: [{ title: "Knowledge Hub — MentorMatch" }, { name: "description", content: "Central library of organisational knowledge." }, { property: "og:title", content: "Knowledge Hub — MentorMatch" }, { property: "og:description", content: "Central library of organisational knowledge." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Knowledge,
 });
 

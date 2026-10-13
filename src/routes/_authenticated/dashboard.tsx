@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Panel, Stat, StatusPill, Empty, Loading, Pill } from "@/components/app-ui";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — MentorMatch" }, { name: "description", content: "Your onboarding overview." }] }),
+  head: () => ({ meta: [{ title: "Dashboard — MentorMatch" }, { name: "description", content: "Your onboarding overview." }, { property: "og:title", content: "Dashboard — MentorMatch" }, { property: "og:description", content: "Your onboarding overview." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Dashboard,
 });
 

@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Panel, StatusPill, Loading, Empty, Pill } from "@/components/app-ui";
 
 export const Route = createFileRoute("/_authenticated/modules/$id")({
-  head: () => ({ meta: [{ title: "Module — MentorMatch" }, { name: "description", content: "Module content and assessment." }] }),
+  head: () => ({ meta: [{ title: "Module — MentorMatch" }, { name: "description", content: "Module content and assessment." }, { property: "og:title", content: "Module — MentorMatch" }, { property: "og:description", content: "Module content and assessment." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: ModulePage,
 });
 

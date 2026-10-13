@@ -4,7 +4,7 @@ import { useMyModules, TRACK_LABEL } from "@/lib/learning";
 import { PageHeader, Panel, StatusPill, Loading, Empty, Pill } from "@/components/app-ui";
 
 export const Route = createFileRoute("/_authenticated/journey")({
-  head: () => ({ meta: [{ title: "My Journey — MentorMatch" }, { name: "description", content: "Your personalised onboarding journey." }] }),
+  head: () => ({ meta: [{ title: "My Journey — MentorMatch" }, { name: "description", content: "Your personalised onboarding journey." }, { property: "og:title", content: "My Journey — MentorMatch" }, { property: "og:description", content: "Your personalised onboarding journey." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Journey,
 });
 

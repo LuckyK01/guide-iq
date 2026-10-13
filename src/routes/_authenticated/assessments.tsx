@@ -4,7 +4,7 @@ import { PageHeader, Loading, Empty, StatusPill } from "@/components/app-ui";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/assessments")({
-  head: () => ({ meta: [{ title: "Assessments — MentorMatch" }, { name: "description", content: "Your assessments, scores and attempts." }] }),
+  head: () => ({ meta: [{ title: "Assessments — MentorMatch" }, { name: "description", content: "Your assessments, scores and attempts." }, { property: "og:title", content: "Assessments — MentorMatch" }, { property: "og:description", content: "Your assessments, scores and attempts." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Assessments,
 });
 
