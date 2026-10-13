@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PageHeader, Loading, Empty, Denied, Pill } from "@/components/app-ui";
 
 export const Route = createFileRoute("/_authenticated/audit")({
-  head: () => ({ meta: [{ title: "Audit Trail — MentorMatch" }, { name: "description", content: "Who did what, when, across the platform." }] }),
+  head: () => ({ meta: [{ title: "Audit Trail — MentorMatch" }, { name: "description", content: "Who did what, when, across the platform." }, { property: "og:title", content: "Audit Trail — MentorMatch" }, { property: "og:description", content: "Who did what, when, across the platform." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Audit,
 });
 

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { Bot, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Panel, StatusPill, Loading, Empty, Pill } from "@/components/app-ui";
 
 export const Route = createFileRoute("/_authenticated/modules/$id")({
-  head: () => ({ meta: [{ title: "Module — MentorMatch" }, { name: "description", content: "Module content and assessment." }] }),
+  head: () => ({ meta: [{ title: "Module — MentorMatch" }, { name: "description", content: "Module content and assessment." }, { property: "og:title", content: "Module — MentorMatch" }, { property: "og:description", content: "Module content and assessment." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: ModulePage,
 });
 
@@ -78,7 +79,7 @@ function ModulePage() {
             <ul className="space-y-2 text-sm">{m.objectives.map((o) => <li key={o} className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 text-primary" />{o}</li>)}</ul>
           </Panel>
           <Panel title="Content">
-            <p className="whitespace-pre-line text-sm leading-relaxed">{m.content}</p>
+            <div className="module-markdown text-sm leading-relaxed"><ReactMarkdown>{m.content}</ReactMarkdown></div>
             {m.state === "not_started" || m.state === "in_progress" ? (
               <Button className="mt-5" onClick={finishReading}>Mark content as read</Button>
             ) : null}

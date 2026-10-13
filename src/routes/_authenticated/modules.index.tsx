@@ -4,7 +4,7 @@ import { PageHeader, StatusPill, Loading, Empty, Pill } from "@/components/app-u
 import { Progress } from "@/components/ui/progress";
 
 export const Route = createFileRoute("/_authenticated/modules/")({
-  head: () => ({ meta: [{ title: "Modules — MentorMatch" }, { name: "description", content: "Your learning modules." }] }),
+  head: () => ({ meta: [{ title: "Modules — MentorMatch" }, { name: "description", content: "Your learning modules." }, { property: "og:title", content: "Modules — MentorMatch" }, { property: "og:description", content: "Your learning modules." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Modules,
 });
 

@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { PageHeader, Loading, Empty, Denied, Pill } from "@/components/app-ui";
 
 export const Route = createFileRoute("/_authenticated/people")({
-  head: () => ({ meta: [{ title: "People & Roles — MentorMatch" }, { name: "description", content: "New joiners, profiles and role access." }] }),
+  head: () => ({ meta: [{ title: "People & Roles — MentorMatch" }, { name: "description", content: "New joiners, profiles and role access." }, { property: "og:title", content: "People & Roles — MentorMatch" }, { property: "og:description", content: "New joiners, profiles and role access." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: People,
 });
 

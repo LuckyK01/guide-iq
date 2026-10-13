@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { processKnowledge } from "@/lib/ai.functions";
 import { extractFileText } from "@/lib/extract.functions";
 import { kindOf, extractLocal } from "@/lib/office-extract";
+import { checkSourceSize } from "@/lib/knowledge-learning";
 import { useMe, logAudit } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,11 +19,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PageHeader, StatusPill, Loading, Empty, Denied, Pill } from "@/components/app-ui";
 
 export const Route = createFileRoute("/_authenticated/knowledge")({
-  head: () => ({ meta: [{ title: "Knowledge Hub — MentorMatch" }, { name: "description", content: "Central library of organisational knowledge." }] }),
+  head: () => ({ meta: [{ title: "Knowledge Hub — MentorMatch" }, { name: "description", content: "Central library of organisational knowledge." }, { property: "og:title", content: "Knowledge Hub — MentorMatch" }, { property: "og:description", content: "Central library of organisational knowledge." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Knowledge,
 });
 
-const TYPES = ["Policy", "SOP", "FAQ", "Training material", "Internal website", "Document"];
+const TYPES = ["Policy", "SOP", "FAQ", "Training material", "Internal website", "Document", "Business requirements (BRD)", "Functional requirements (FRD)", "Technical specification", "Spreadsheet", "Presentation"];
 const STATUSES = ["all", "draft", "ai_processed", "pending_review", "published", "review_due", "archived"];
 
 function Knowledge() {
@@ -63,6 +64,7 @@ function Knowledge() {
     <div>
       <PageHeader title="Knowledge Hub" subtitle="Source of truth for onboarding. Only published items are visible to new joiners and the AI Mentor." actions={<NewItem onDone={() => qc.invalidateQueries({ queryKey: ["knowledge"] })} owner={me.name} />} />
       <div className="mb-4 flex flex-wrap gap-2">
+        <Button asChild variant="outline"><Link to="/module-builder"><Sparkles className="size-4" /> Build modules</Link></Button>
         <Input placeholder="Search title…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
         <select value={filter} onChange={(e) => setFilter(e.target.value)} className="rounded-md border bg-card px-3 text-sm">
           {STATUSES.map((s) => <option key={s} value={s}>{s === "all" ? "All statuses" : s.replace("_", " ")}</option>)}
@@ -103,7 +105,7 @@ function Knowledge() {
   );
 }
 
-const ACCEPT = ".pdf,.docx,.pptx,.xlsx,.txt,.md,.csv,.png,.jpg,.jpeg,.webp,.gif";
+const ACCEPT = ".pdf,.doc,.docx,.pptx,.xls,.xlsx,.xlsm,.xlsb,.ods,.rtf,.txt,.md,.csv,.tsv,.json,.html,.htm,.png,.jpg,.jpeg,.webp,.gif";
 
 function NewItem({ onDone, owner }: { onDone: () => void; owner: string }) {
   const extract = useServerFn(extractFileText);
@@ -111,6 +113,7 @@ function NewItem({ onDone, owner }: { onDone: () => void; owner: string }) {
   const [f, setF] = useState({ title: "", content_type: "Policy", category: "", tags: "", source: "", team: "All", body: "" });
   const [file, setFile] = useState<{ path: string; name: string; type: string } | null>(null);
   const [extracting, setExtracting] = useState(false);
+  const [ocrFile, setOcrFile] = useState<{ path: string; mediaType: string; name: string } | null>(null);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0];
@@ -122,11 +125,19 @@ function NewItem({ onDone, owner }: { onDone: () => void; owner: string }) {
     setExtracting(true);
     try {
       const { data: u } = await supabase.auth.getUser();
-      const path = `${u.user!.id}/${crypto.randomUUID()}-${picked.name.replace(/[^\w.\-]+/g, "_").slice(-120)}`;
+      if (!u.user) throw new Error("Please sign in again.");
+      const path = `${u.user.id}/${crypto.randomUUID()}-${picked.name.replace(/[^\w.\-]+/g, "_").slice(-120)}`;
       const { error: upErr } = await supabase.storage.from("knowledge-files").upload(path, picked, { contentType: picked.type || "application/octet-stream" });
       if (upErr) throw new Error(upErr.message);
-      const mediaType = picked.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : picked.type;
-      const text = kind === "ocr" ? (await extract({ data: { path, mediaType } })).text : await extractLocal(picked);
+      const extension = picked.name.toLowerCase().split(".").pop();
+      const mediaType = extension === "pdf" ? "application/pdf" : picked.type || ({ png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif" } as Record<string, string>)[extension ?? ""] || "application/octet-stream";
+      setOcrFile(null);
+      let text: string;
+      try { text = kind === "ocr" ? (await extract({ data: { path, mediaType } })).text : await extractLocal(picked); }
+      catch (error) {
+        if (mediaType === "application/pdf") { setOcrFile({ path, mediaType, name: picked.name }); toast.warning((error as Error).message); return; }
+        throw error;
+      }
       setFile({ path, name: picked.name, type: mediaType || picked.name.split(".").pop() || "file" });
       setF((prev) => ({
         ...prev,
@@ -141,14 +152,27 @@ function NewItem({ onDone, owner }: { onDone: () => void; owner: string }) {
     finally { setExtracting(false); }
   }
 
+  async function runOcr() {
+    if (!ocrFile) return;
+    setExtracting(true);
+    try {
+      const { text } = await extract({ data: { path: ocrFile.path, mediaType: ocrFile.mediaType } });
+      setFile({ path: ocrFile.path, name: ocrFile.name, type: ocrFile.mediaType });
+      setF((prev) => ({ ...prev, title: prev.title || ocrFile.name.replace(/\.[^.]+$/, ""), source: prev.source || ocrFile.name, body: text }));
+      setOcrFile(null); toast.success("Text extracted — review before saving.");
+    } catch (error) { toast.error((error as Error).message); } finally { setExtracting(false); }
+  }
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (f.title.trim().length < 3 || f.body.trim().length < 20) { toast.error("Add a title and at least 20 characters of content."); return; }
     const { data: u } = await supabase.auth.getUser();
+    if (!u.user) { toast.error("Please sign in again."); return; }
+    try { checkSourceSize(f.body); } catch (error) { toast.error((error as Error).message); return; }
     const { data, error } = await supabase.from("knowledge_items").insert({
       title: f.title.trim().slice(0, 200), content_type: f.content_type, category: f.category.slice(0, 80), team: f.team.slice(0, 80),
-      tags: f.tags.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 10), source: f.source.slice(0, 300), body: f.body.slice(0, 20000),
-      owner_id: u.user!.id, owner_name: owner,
+      tags: f.tags.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 10), source: f.source.slice(0, 300), body: f.body,
+      owner_id: u.user.id, owner_name: owner,
       source_file_path: file?.path ?? null, source_file_name: file?.name ?? null, source_file_type: file?.type ?? null,
     }).select("id").single();
     if (error) { toast.error(error.message); return; }
@@ -170,8 +194,9 @@ function NewItem({ onDone, owner }: { onDone: () => void; owner: string }) {
               {extracting ? "Extracting text…" : "Import from file (optional)"}
             </Label>
             <input id="kfile" type="file" accept={ACCEPT} onChange={onFile} disabled={extracting} className="mt-2 block w-full text-xs file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-primary-foreground" />
-            <p className="mt-1 text-xs text-muted-foreground">PDF, Word, PowerPoint, Excel, text or images (max 20 MB). Scanned PDFs and images are read with AI text recognition. Always check the extracted text below.</p>
-            {file && <div className="mt-2 flex items-center gap-2 text-xs"><FileText className="size-3.5" />{file.name}<button type="button" className="ml-auto underline" onClick={() => setFile(null)}>Detach</button></div>}
+            <p className="mt-1 text-xs text-muted-foreground">PDF, Word (.doc/.docx), PowerPoint, Excel, OpenDocument spreadsheets, RTF, text, HTML or images · max 20 MB.</p>
+            {ocrFile && <Button type="button" variant="outline" className="mt-3" disabled={extracting} onClick={runOcr}><Sparkles className="size-4" /> Use AI text recognition (uses credits)</Button>}
+            {file && <div className="mt-2 flex items-center gap-2 text-xs"><FileText className="size-3.5" /><span className="break-all">{file.name}</span><Button type="button" size="sm" variant="ghost" className="ml-auto" onClick={() => setFile(null)}>Detach</Button></div>}
           </div>
           <div><Label>Title</Label><Input value={f.title} onChange={set("title")} maxLength={200} /></div>
           <div className="grid grid-cols-2 gap-3">

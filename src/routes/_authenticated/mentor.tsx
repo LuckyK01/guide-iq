@@ -10,7 +10,7 @@ import { Pill } from "@/components/app-ui";
 
 export const Route = createFileRoute("/_authenticated/mentor")({
   validateSearch: z.object({ q: z.string().optional() }),
-  head: () => ({ meta: [{ title: "AI Mentor — MentorMatch" }, { name: "description", content: "Ask onboarding questions answered from approved knowledge." }] }),
+  head: () => ({ meta: [{ title: "AI Mentor — MentorMatch" }, { name: "description", content: "Ask onboarding questions answered from approved knowledge." }, { property: "og:title", content: "AI Mentor — MentorMatch" }, { property: "og:description", content: "Ask onboarding questions answered from approved knowledge." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Mentor,
 });
 

@@ -10,7 +10,7 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — MentorMatch" },
-      { name: "description", content: "Sign in to your MentorMatch onboarding workspace." },
+      { name: "description", content: "Sign in to your MentorMatch onboarding workspace." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
       { property: "og:title", content: "Sign in — MentorMatch" },
       { property: "og:description", content: "Sign in to your MentorMatch onboarding workspace." },
     ],

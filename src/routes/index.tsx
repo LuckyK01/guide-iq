@@ -5,7 +5,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "MentorMatch — AI Onboarding Mentor" },
-      { name: "description", content: "Approved knowledge, personalised onboarding journeys and an AI mentor for every new joiner." },
+      { name: "description", content: "Approved knowledge, personalised onboarding journeys and an AI mentor for every new joiner." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
       { property: "og:title", content: "MentorMatch — AI Onboarding Mentor" },
       { property: "og:description", content: "Approved knowledge, personalised onboarding journeys and an AI mentor for every new joiner." },
     ],

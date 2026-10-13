@@ -1,17 +1,4 @@
-import * as pdfjsLib from 'pdfjs-dist';
-import * as XLSX from '@e965/xlsx';
-import mammoth from 'mammoth';
-import JSZip from 'jszip';
-
-// Vite worker import - only used in browser
-let pdfWorkerUrl = '';
-if (typeof window !== 'undefined') {
-  // Use a dynamic import or static URL depending on build setup
-  // For Vite, ?url is the recommended way to get a reference to a worker file
-  import('pdfjs-dist/build/pdf.worker.mjs?url').then(m => {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = m.default;
-  });
-}
+import { checkSourceSize } from "./knowledge-learning";
 
 export type ExtractKind = "local" | "ocr" | "unsupported";
 
@@ -22,8 +9,8 @@ export type ExtractKind = "local" | "ocr" | "unsupported";
  */
 export function kindOf(file: File): ExtractKind {
   const n = file.name.toLowerCase();
-  if (/\.(docx|pptx|xlsx|xls|doc|pdf|txt|md|csv)$/.test(n)) return "local";
-  if (/^image\/(png|jpe?g|webp|gif)$/.test(file.type)) return "ocr";
+  if (/\.(docx|pptx|xlsx|xls|xlsm|xlsb|ods|doc|pdf|txt|md|csv|tsv|json|html|htm|rtf)$/.test(n)) return "local";
+  if (/^image\/(png|jpe?g|webp|gif)$/.test(file.type) || /\.(png|jpe?g|webp|gif)$/.test(n)) return "ocr";
   return "unsupported";
 }
 
@@ -35,95 +22,101 @@ export async function extractLocal(file: File): Promise<string> {
   const n = file.name.toLowerCase();
   const arrayBuffer = await file.arrayBuffer();
 
-  try {
+  let text = "";
     if (n.endsWith(".pdf")) {
-      return await extractPDF(arrayBuffer);
+      text = await extractPDF(arrayBuffer);
     }
     if (n.endsWith(".docx")) {
+      const mammoth = await import('mammoth');
       const result = await mammoth.extractRawText({ arrayBuffer });
-      return result.value;
+      text = result.value;
     }
     if (n.endsWith(".doc")) {
-      return await extractLegacyDoc(arrayBuffer);
+      text = await extractLegacyDoc(arrayBuffer);
     }
-    if (n.endsWith(".xlsx") || n.endsWith(".xls")) {
+    if (/\.(xlsx|xls|xlsm|xlsb|ods)$/.test(n)) {
+      const XLSX = await import('@e965/xlsx');
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-      return workbook.SheetNames.map(name => {
+      text = workbook.SheetNames.map(name => {
         const sheet = workbook.Sheets[name];
-        return `## Sheet: ${name}\n${XLSX.utils.sheet_to_txt(sheet)}`;
+        return sheet ? `## Sheet: ${name}\n${XLSX.utils.sheet_to_csv(sheet)}` : "";
       }).join('\n\n');
     }
     if (n.endsWith(".pptx")) {
-      return await extractPptx(arrayBuffer);
+      text = await extractPptx(arrayBuffer);
     }
-    if (/\.(txt|md|csv)$/.test(n)) {
-      return new TextDecoder().decode(arrayBuffer).slice(0, 50000);
+    if (/\.(txt|md|csv|tsv|json)$/.test(n)) {
+      text = new TextDecoder().decode(arrayBuffer);
     }
-  } catch (err) {
-    console.error(`Extraction failed for ${n}:`, err);
-    // Fallback to basic text extraction if binary parsing fails
-    return extractBasicText(arrayBuffer);
-  }
-
-  return "";
+    if (/\.(html|htm)$/.test(n)) {
+      const doc = new DOMParser().parseFromString(new TextDecoder().decode(arrayBuffer), "text/html");
+      doc.querySelectorAll("script,style").forEach((el) => el.remove());
+      text = doc.body.textContent ?? "";
+    }
+    if (n.endsWith(".rtf")) {
+      const { rtfToText } = await import("./rtf-extract");
+      text = rtfToText(new TextDecoder().decode(arrayBuffer));
+    }
+  return checkSourceSize(text);
 }
 
 async function extractPDF(data: ArrayBuffer): Promise<string> {
+  const pdfjsLib = await import('pdfjs-dist');
+  const worker = await import('pdfjs-dist/build/pdf.worker.mjs?url');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = worker.default;
   const loadingTask = pdfjsLib.getDocument({ data });
   const pdf = await loadingTask.promise;
   let text = "";
-  for (let i = 1; i <= pdf.numPages; i++) {
+  try { for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    text += content.items.map((item: any) => item.str).join(" ") + "\n";
+    text += `## Page ${i}\n` + content.items.map((item) => "str" in item ? item.str + (item.hasEOL ? "\n" : " ") : "").join("") + "\n";
+    if (!content.items.some((item) => "str" in item && item.str.trim())) throw new Error("This PDF has scanned pages. Use AI text recognition to read all pages.");
+    checkSourceSize(text);
   }
-  return text;
+  return text; } finally { await loadingTask.destroy(); }
 }
 
 async function extractLegacyDoc(data: ArrayBuffer): Promise<string> {
   try {
     const { parseMsDoc } = await import('@file-viewer/doc');
     const doc = await parseMsDoc(new Uint8Array(data));
-    let text = "";
-    const traverse = (nodes: any[]) => {
-      for (const node of nodes) {
-        if (node.type === 'text') text += (node.value || '') + ' ';
-        else if (node.children) traverse(node.children);
-        if (node.type === 'paragraph') text += '\n';
-      }
+    const texts: string[] = [];
+    const traverse = (value: unknown): void => {
+      if (Array.isArray(value)) { value.forEach(traverse); return; }
+      if (!value || typeof value !== "object") return;
+      const node = value as Record<string, unknown>;
+      if (typeof node['text'] === "string") { texts.push(node['text']); return; }
+      Object.values(node).forEach(traverse);
     };
-    doc.sections?.forEach((s: any) => traverse(s.children || []));
-    return text.trim() || extractBasicText(data);
+    traverse(doc.blocks);
+    if (!texts.length) throw new Error("No readable text");
+    return texts.join("\n");
   } catch {
-    return extractBasicText(data);
+    throw new Error("Could not read this legacy Word document. Save it as .docx or PDF and import again.");
   }
 }
 
 async function extractPptx(data: ArrayBuffer): Promise<string> {
+  const JSZip = (await import('jszip')).default;
   const zip = await JSZip.loadAsync(data);
   const slides = Object.keys(zip.files)
     .filter(f => /^ppt\/slides\/slide\d+\.xml$/.test(f))
     .sort((a, b) => {
-      const aNum = parseInt(a.match(/\d+/)?[0] || '0');
-      const bNum = parseInt(b.match(/\d+/)?[0] || '0');
+      const aNum = parseInt(a.match(/\d+/)?.[0] || '0');
+      const bNum = parseInt(b.match(/\d+/)?.[0] || '0');
       return aNum - bNum;
     });
 
   let text = "";
   for (const [i, s] of slides.entries()) {
-    const xml = await zip.file(s)!.async("string");
-    const matches = xml.match(/<a:t>([^<]*)<\/a:t>/g);
-    const slideText = matches?.map(m => m.replace(/<a:t>|<\/a:t>/g, '')).join(" ") ?? "";
+    const entry = zip.file(s);
+    if (!entry) throw new Error("Missing slide content");
+    const xml = await entry.async("string");
+    const doc = new DOMParser().parseFromString(xml, "application/xml");
+    const slideText = Array.from(doc.getElementsByTagName("a:t")).map((el) => el.textContent ?? "").join("\n");
     text += `## Slide ${i + 1}\n${slideText}\n\n`;
   }
   return text;
 }
 
-function extractBasicText(data: ArrayBuffer): string {
-  const decoder = new TextDecoder('utf-8', { fatal: false });
-  return decoder.decode(data)
-    .replace(/[^\x20-\x7E\n\r\t\u00A0-\u00FF]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 20000);
-}

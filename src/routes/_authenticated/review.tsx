@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PageHeader, Panel, StatusPill, Loading, Empty, Denied, Pill } from "@/components/app-ui";
 
 export const Route = createFileRoute("/_authenticated/review")({
-  head: () => ({ meta: [{ title: "Content Review — MentorMatch" }, { name: "description", content: "Review, approve and publish knowledge." }] }),
+  head: () => ({ meta: [{ title: "Content Review — MentorMatch" }, { name: "description", content: "Review, approve and publish knowledge." }, { property: "og:title", content: "Content Review — MentorMatch" }, { property: "og:description", content: "Review, approve and publish knowledge." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Review,
 });
 

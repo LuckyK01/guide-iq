@@ -36,6 +36,7 @@ const GROUPS: { label?: string; items: NavItem[] }[] = [
     items: [
       { to: "/knowledge", label: "Knowledge Hub", icon: Library, show: (m) => m.isStaff },
       { to: "/review", label: "Content Review", icon: ShieldCheck, show: (m) => m.canReview },
+      { to: "/module-builder", label: "Module Builder", icon: BookOpen, show: (m) => m.isStaff },
     ],
   },
   {
