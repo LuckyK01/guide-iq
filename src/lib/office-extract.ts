@@ -74,7 +74,7 @@ async function extractPDF(data: ArrayBuffer): Promise<string> {
     if (!content.items.some((item) => "str" in item && item.str.trim())) throw new Error("This PDF has scanned pages. Use AI text recognition to read all pages.");
     checkSourceSize(text);
   }
-  return text; } finally { await pdf.destroy(); }
+  return text; } finally { await loadingTask.destroy(); }
 }
 
 async function extractLegacyDoc(data: ArrayBuffer): Promise<string> {
@@ -86,7 +86,7 @@ async function extractLegacyDoc(data: ArrayBuffer): Promise<string> {
       if (Array.isArray(value)) { value.forEach(traverse); return; }
       if (!value || typeof value !== "object") return;
       const node = value as Record<string, unknown>;
-      if (typeof node.text === "string") { texts.push(node.text); return; }
+      if (typeof node['text'] === "string") { texts.push(node['text']); return; }
       Object.values(node).forEach(traverse);
     };
     traverse(doc.blocks);

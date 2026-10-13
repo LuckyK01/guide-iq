@@ -14,9 +14,9 @@ describe("document-based learning requirements", () => {
     expect(() => validateQuestions(questions(16))).toThrow();
   });
   it("rejects invalid answers and repeated questions", () => {
-    const invalid = questions(12); invalid[0] = { ...invalid[0], answer: [4] };
+    const invalid = questions(12); invalid[0] = { q: "Invalid answer?", type: "mcq", options: ["One", "Two"], answer: [4] };
     expect(() => validateQuestions(invalid)).toThrow();
-    invalid[0] = invalid[1]; expect(() => validateQuestions(invalid)).toThrow();
+    invalid[0] = { q: "Document scenario 2?", type: "mcq", options: ["Correct", "Incorrect"], answer: [0] }; expect(() => validateQuestions(invalid)).toThrow();
   });
   it("requires detailed lessons and a practical assignment", () => {
     const learning = { title: "BRD review", description: "Source-backed learning", summary: "Summary", category: "Requirements", tags: [], faqs: [], gaps: [], objectives: ["Review", "Apply", "Check"], duration_min: 30, questions: questions(12), content: "Source-backed explanation. ".repeat(60) + "\n## Practical assignment\nReview requirements." };
@@ -29,11 +29,13 @@ describe("document-based learning requirements", () => {
     const input = generationInput(items);
     expect(input).toContain("All sheet rows"); expect(input).toContain("All requirements");
     expect(generationInput(items.slice().reverse())).toBe(input);
-    expect(generationInput([{ ...items[0], body: "Updated" }, items[1]])).not.toBe(input);
+    expect(generationInput(items.map((item) => ({ ...item, body: "Updated" })))).not.toBe(input);
   });
   it("preserves text beyond the former 20,000-character cap and refuses overflow", async () => {
     const text = "Requirements\n".repeat(5000);
-    expect(await extractLocal(new File([text], "BRD.txt"))).toBe(text);
+    const file = new File([text], "BRD.txt");
+    Object.defineProperty(file, "arrayBuffer", { value: async () => new TextEncoder().encode(text).buffer });
+    expect(await extractLocal(file)).toBe(text);
     expect(checkSourceSize("x".repeat(300000))).toHaveLength(300000);
     expect(() => checkSourceSize("x".repeat(300001))).toThrow();
   });
