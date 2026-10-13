@@ -103,8 +103,8 @@ async function extractPptx(data: ArrayBuffer): Promise<string> {
   const slides = Object.keys(zip.files)
     .filter(f => /^ppt\/slides\/slide\d+\.xml$/.test(f))
     .sort((a, b) => {
-      const aNum = parseInt(a.match(/\d+/)?[0] || '0');
-      const bNum = parseInt(b.match(/\d+/)?[0] || '0');
+      const aNum = parseInt(a.match(/\d+/)?.[0] || '0');
+      const bNum = parseInt(b.match(/\d+/)?.[0] || '0');
       return aNum - bNum;
     });
 
