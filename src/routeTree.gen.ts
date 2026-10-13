@@ -18,6 +18,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedJourneyRouteImport } from './routes/_authenticated/journey'
 import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated/knowledge'
 import { Route as AuthenticatedMentorRouteImport } from './routes/_authenticated/mentor'
+import { Route as AuthenticatedModuleBuilderRouteImport } from './routes/_authenticated/module-builder'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedModulesIndexRouteImport } from './routes/_authenticated/modules.index'
@@ -68,6 +69,12 @@ const AuthenticatedMentorRoute = AuthenticatedMentorRouteImport.update({
   path: '/mentor',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedModuleBuilderRoute =
+  AuthenticatedModuleBuilderRouteImport.update({
+    id: '/module-builder',
+    path: '/module-builder',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPeopleRoute = AuthenticatedPeopleRouteImport.update({
   id: '/people',
   path: '/people',
@@ -99,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/journey': typeof AuthenticatedJourneyRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/mentor': typeof AuthenticatedMentorRoute
+  '/module-builder': typeof AuthenticatedModuleBuilderRoute
   '/people': typeof AuthenticatedPeopleRoute
   '/review': typeof AuthenticatedReviewRoute
   '/modules/$id': typeof AuthenticatedModulesIdRoute
@@ -113,6 +121,7 @@ export interface FileRoutesByTo {
   '/journey': typeof AuthenticatedJourneyRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/mentor': typeof AuthenticatedMentorRoute
+  '/module-builder': typeof AuthenticatedModuleBuilderRoute
   '/people': typeof AuthenticatedPeopleRoute
   '/review': typeof AuthenticatedReviewRoute
   '/modules/$id': typeof AuthenticatedModulesIdRoute
@@ -129,6 +138,7 @@ export interface FileRoutesById {
   '/_authenticated/journey': typeof AuthenticatedJourneyRoute
   '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
   '/_authenticated/mentor': typeof AuthenticatedMentorRoute
+  '/_authenticated/module-builder': typeof AuthenticatedModuleBuilderRoute
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/modules/$id': typeof AuthenticatedModulesIdRoute
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
     | '/journey'
     | '/knowledge'
     | '/mentor'
+    | '/module-builder'
     | '/people'
     | '/review'
     | '/modules/$id'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '/journey'
     | '/knowledge'
     | '/mentor'
+    | '/module-builder'
     | '/people'
     | '/review'
     | '/modules/$id'
@@ -174,6 +186,7 @@ export interface FileRouteTypes {
     | '/_authenticated/journey'
     | '/_authenticated/knowledge'
     | '/_authenticated/mentor'
+    | '/_authenticated/module-builder'
     | '/_authenticated/people'
     | '/_authenticated/review'
     | '/_authenticated/modules/$id'
@@ -251,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMentorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/module-builder': {
+      id: '/_authenticated/module-builder'
+      path: '/module-builder'
+      fullPath: '/module-builder'
+      preLoaderRoute: typeof AuthenticatedModuleBuilderRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/people': {
       id: '/_authenticated/people'
       path: '/people'
@@ -289,6 +309,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedJourneyRoute: typeof AuthenticatedJourneyRoute
   AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
   AuthenticatedMentorRoute: typeof AuthenticatedMentorRoute
+  AuthenticatedModuleBuilderRoute: typeof AuthenticatedModuleBuilderRoute
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedModulesIdRoute: typeof AuthenticatedModulesIdRoute
@@ -302,6 +323,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedJourneyRoute: AuthenticatedJourneyRoute,
   AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
   AuthenticatedMentorRoute: AuthenticatedMentorRoute,
+  AuthenticatedModuleBuilderRoute: AuthenticatedModuleBuilderRoute,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedModulesIdRoute: AuthenticatedModulesIdRoute,
