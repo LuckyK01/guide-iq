@@ -1,17 +1,19 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import { streamText, type ModelMessage } from "ai";
+import { streamText, Output, type ModelMessage } from "ai";
+import { generatedLearningSchema } from "./knowledge-learning";
 
 import {
   createLovableAiGatewayRunIdFetch,
   getLovableAiGatewayRunId,
   withLovableAiGatewayRunIdHeader,
-} from "../../ai-apps-gateway-sdk/examples/run-id.ts";
+} from "./run-id.server.ts";
 
 export function createResponsesCall(
   request: Request,
   config: { baseURL: string; apiKey: string; model: string },
   messages: ModelMessage[],
   instructions?: string,
+  structured = false,
 ) {
   const runIdFetch = createLovableAiGatewayRunIdFetch(getLovableAiGatewayRunId(request));
   const provider = createOpenAI({
@@ -27,13 +29,15 @@ export function createResponsesCall(
     ...(instructions ? { instructions } : {}),
     messages,
     abortSignal: request.signal,
+    maxRetries: 0,
+    ...(structured ? { output: Output.object({ schema: generatedLearningSchema }) } : {}),
     providerOptions: {
       openai: {
         store: false,
         ...(reasoning
           ? {
               forceReasoning: true,
-              reasoningEffort: "medium",
+              reasoningEffort: "low",
               reasoningSummary: "auto",
               include: ["reasoning.encrypted_content"],
             }
