@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { generationInput, validateLearning } from "./knowledge-learning";
 
 const FALLBACK =
   "I couldn't find this in the approved onboarding knowledge base. Please contact your Manager, HR or relevant SME.";
@@ -96,19 +97,21 @@ export const processKnowledge = createServerFn({ method: "POST" })
     if (!isStaff) throw new Error("Forbidden");
     const { data: item, error } = await supabase.from("knowledge_items").select("*").eq("id", data.id).single();
     if (error || !item) throw new Error("Item not found");
-    const { runAI, extractJson, AI_MODEL } = await import("./ai.server");
-    const raw = await runAI(
-      `You process onboarding content for human review. Use ONLY the given text. Reply JSON only: {"summary":"2-3 sentences","category":"short","tags":["..."],"faqs":[{"q":"","a":""}],"objectives":["..."],"questions":[{"q":"","type":"mcq","options":["","","",""],"answer":[0]}],"gaps":["missing info a new joiner would need"]}. Max 4 items per list.`,
-      `TITLE: ${item.title}\nTYPE: ${item.content_type}\nTEXT:\n${item.body}`,
-    );
-    const p = extractJson<{ summary: string; category: string; tags: string[]; faqs: unknown[]; objectives: string[]; questions: unknown[]; gaps: string[] }>(raw);
-    if (!p) throw new Error("AI returned an unreadable result. Please retry.");
+    const { generateLearning, AI_MODEL } = await import("./ai.server");
+    const input = generationInput([item]);
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+    const fingerprint = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+    const previous = item.ai_faqs as { fingerprint?: string; learning?: unknown } | null;
+    if (previous?.fingerprint === fingerprint && previous.learning) {
+      try { validateLearning(previous.learning); return { ok: true, reused: true }; } catch { /* Legacy output must be regenerated manually. */ }
+    }
+    const p = await generateLearning(input);
     const { error: uerr } = await supabase.from("knowledge_items").update({
       ai_summary: p.summary,
       ai_tags: (p.tags ?? []).slice(0, 6),
-      ai_faqs: { faqs: (p.faqs ?? []).slice(0, 4), gaps: (p.gaps ?? []).slice(0, 4), category: p.category } as never,
-      ai_objectives: (p.objectives ?? []).slice(0, 4),
-      ai_questions: (p.questions ?? []).slice(0, 4) as never,
+      ai_faqs: { faqs: p.faqs, gaps: p.gaps, category: p.category, learning: p, fingerprint } as never,
+      ai_objectives: p.objectives,
+      ai_questions: p.questions as never,
       ai_model: AI_MODEL,
       ai_processed_at: new Date().toISOString(),
       status: item.status === "draft" ? "ai_processed" : item.status,
