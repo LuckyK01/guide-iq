@@ -35,6 +35,9 @@ function People() {
         supabase.from("modules").select("id").eq("published", true),
       ]);
       if (p.error) throw p.error;
+      if (r.error) throw r.error;
+      if (prog.error) throw prog.error;
+      if (mods.error) throw mods.error;
       return { people: p.data as Profile[], roles: r.data ?? [], prog: prog.data ?? [], total: mods.data?.length ?? 0 };
     },
   });
@@ -42,12 +45,14 @@ function People() {
   if (!me.isStaff) return <Denied />;
 
   async function toggleRole(uid: string, role: AppRole, has: boolean, name: string) {
+    if (!me?.isAdmin || (uid === me.id && role === "admin" && has)) return;
     const { error } = has
       ? await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", role)
       : await supabase.from("user_roles").insert({ user_id: uid, role });
     if (error) { toast.error(error.message); return; }
     await logAudit(has ? "role_revoked" : "role_granted", "user", uid, name, { role });
     qc.invalidateQueries({ queryKey: ["people"] });
+    qc.invalidateQueries({ queryKey: ["me"] });
   }
 
   async function saveProfile(p: Profile) {

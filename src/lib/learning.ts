@@ -7,12 +7,15 @@ export function useMyModules() {
   return useQuery({
     queryKey: ["my-modules"],
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
-      const [{ data: mods, error }, { data: prog }] = await Promise.all([
+      const { data: u, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!u.user) throw new Error("Please sign in to load your learning.");
+      const [{ data: mods, error }, { data: prog, error: progressError }] = await Promise.all([
         supabase.from("modules").select("*").eq("published", true).order("sort_order"),
-        supabase.from("module_progress").select("*").eq("user_id", u.user!.id),
+        supabase.from("module_progress").select("*").eq("user_id", u.user.id),
       ]);
       if (error) throw error;
+      if (progressError) throw progressError;
       return (mods ?? []).map((m) => {
         const p = prog?.find((x) => x.module_id === m.id);
         return { ...m, questions: (m.questions as unknown as Question[]) ?? [], p, state: p?.state ?? "not_started", progress: p?.progress ?? 0 };

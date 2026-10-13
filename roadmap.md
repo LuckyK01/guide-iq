@@ -1,4 +1,6 @@
 # Implementation roadmap
+- [x] Audit implemented learner/admin workflows: all ten pages loaded without browser errors for temporary admin and learner accounts; learner staff-area restrictions and sign-out/back protection verified. Document import → draft → review → publication and assessment persistence verified. Twelve learning tests passed; temporary accounts/documents removed.
+- [ ] Finish full-production readiness — damaged original demo accounts require Cloud support; live AI generation/OCR and Google sign-in remain unverified; multi-team data boundaries, tailored assignments, reporting, AI controls, transactional review/auditing and server-validated assessment grading remain unfinished.
 - [x] Expand local document extraction and preserve complete source text; real Word, multi-sheet Excel and two-page PDF browser checks passed.
 - [x] Generate detailed, source-grounded draft modules and assignments from multiple documents, enforcing 10–15 questions.
 - [x] Provide human editing and publication of generated modules and reuse unchanged results.

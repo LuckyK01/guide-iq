@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +34,7 @@ function AuthPage() {
       if (mode === "up") {
         const { data, error } = await supabase.auth.signUp({
           email, password,
-          options: { emailRedirectTo: window.location.origin + "/dashboard", data: { full_name: name } },
+          options: { emailRedirectTo: window.location.origin, data: { full_name: name } },
         });
         if (error) throw error;
         if (!data.session) { toast.success("Check your email to confirm your account."); return; }
@@ -48,8 +49,11 @@ function AuthPage() {
   }
 
   async function google() {
-    const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
-    if (error) { toast.error(error.message); return; }
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+      if (result.error) { toast.error(result.error.message); return; }
+      if (!result.redirected) await nav({ to: "/dashboard" });
+    } catch { toast.error("Google sign-in could not complete. Please try again."); }
   }
 
   return (
@@ -68,9 +72,9 @@ function AuthPage() {
           <Button className="w-full" disabled={busy}>{busy ? "Please wait…" : mode === "in" ? "Sign in" : "Create account"}</Button>
         </form>
         <Button variant="outline" className="mt-3 w-full" onClick={google}>Continue with Google</Button>
-        <button className="mt-5 w-full text-sm text-muted-foreground hover:text-foreground" onClick={() => setMode(mode === "in" ? "up" : "in")}>
+        <Button type="button" variant="ghost" className="mt-5 w-full text-sm text-muted-foreground" disabled={busy} onClick={() => setMode(mode === "in" ? "up" : "in")}>
           {mode === "in" ? "New here? Create an account" : "Already have an account? Sign in"}
-        </button>
+        </Button>
       </div>
     </div>
   );

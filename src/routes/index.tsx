@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -16,13 +18,19 @@ export const Route = createFileRoute("/")({
 const STEPS = ["Knowledge", "AI processing", "Human approval", "Learning journey", "AI Mentor", "Assessment", "Analytics"];
 
 function Index() {
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void supabase.auth.getUser().then(({ data }) => { if (active) setSignedIn(Boolean(data.user)); });
+    return () => { active = false; };
+  }, []);
   return (
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <div className="flex items-center gap-2 font-semibold">
           <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">M</span> MentorMatch
         </div>
-        <Button asChild variant="outline"><Link to="/auth">Sign in</Link></Button>
+        <Button asChild variant="outline"><Link to={signedIn ? "/dashboard" : "/auth"}>{signedIn ? "Open workspace" : "Sign in"}</Link></Button>
       </header>
       <main className="mx-auto max-w-6xl px-6 pb-20 pt-16">
         <p className="text-sm font-medium text-primary">Enterprise onboarding platform</p>
@@ -33,7 +41,7 @@ function Index() {
           AI suggests, people approve. New joiners get a personalised journey and a mentor that answers only from published company knowledge, with sources.
         </p>
         <div className="mt-8 flex gap-3">
-          <Button asChild size="lg"><Link to="/auth">Get started</Link></Button>
+          <Button asChild size="lg"><Link to={signedIn ? "/dashboard" : "/auth"}>{signedIn ? "Open workspace" : "Get started"}</Link></Button>
         </div>
         <ol className="mt-20 grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-4 lg:grid-cols-7">
           {STEPS.map((s, i) => (

@@ -33,22 +33,29 @@ function Review() {
   const { data: versions } = useQuery({
     queryKey: ["versions", sel],
     enabled: !!sel,
-    queryFn: async () => (await supabase.from("knowledge_versions").select("*").eq("item_id", sel!).order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => {
+      if (!sel) return [];
+      const { data, error } = await supabase.from("knowledge_versions").select("*").eq("item_id", sel).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
   });
   if (!me) return <Loading />;
   if (!me.canReview) return <Denied />;
   const item = data?.find((x) => x.id === sel);
 
   function pick(id: string) {
-    const k = data!.find((x) => x.id === id)!;
+    const k = data?.find((x) => x.id === id);
+    if (!k) return;
     setSel(id); setBody(k.body); setComment("");
   }
 
   async function act(action: "approve" | "reject" | "changes" | "publish") {
-    if (!item) return;
+    if (!item || !me?.canReview) return;
+    if (!body.trim()) { toast.error("Knowledge content cannot be empty."); return; }
     const edited = body.trim() !== item.body.trim();
     const now = new Date().toISOString();
-    const patch: any = { reviewer_name: me!.name, review_comment: comment || null, updated_at: now };
+    const patch: any = { reviewer_name: me.name, review_comment: comment || null, updated_at: now };
     if (action === "approve") Object.assign(patch, { status: "approved", approved_at: now, last_reviewed: now.slice(0, 10) });
     if (action === "publish") Object.assign(patch, { status: "published", approved_at: item.approved_at ?? now, last_reviewed: now.slice(0, 10) });
     if (action === "reject") Object.assign(patch, { status: "draft" });
@@ -56,14 +63,18 @@ function Review() {
     if ((action === "reject" || action === "changes") && !comment.trim()) { toast.error("Add a comment explaining the decision."); return; }
     if (edited) Object.assign(patch, { body, version: item.version + 1 });
     // Snapshot previous version before change — approved content is never silently overwritten.
-    await supabase.from("knowledge_versions").insert({ item_id: item.id, version: item.version, title: item.title, body: item.body, status: item.status, changed_by: me!.name, note: `${action}${comment ? `: ${comment}` : ""}` });
-    const { error } = await supabase.from("knowledge_items").update(patch).eq("id", item.id);
+    const { error: snapshotError } = await supabase.from("knowledge_versions").insert({ item_id: item.id, version: item.version, title: item.title, body: item.body, status: item.status, changed_by: me.name, note: `${action}${comment ? `: ${comment}` : ""}` });
+    if (snapshotError) { toast.error("Could not save change history. No content was changed."); return; }
+    const { data: updated, error } = await supabase.from("knowledge_items").update(patch).eq("id", item.id).eq("updated_at", item.updated_at).select("id").maybeSingle();
     if (error) { toast.error(error.message); return; }
+    if (!updated) { toast.error("This item changed while you were reviewing. Reload and review it again."); qc.invalidateQueries({ queryKey: ["review-queue"] }); return; }
     await logAudit(action === "changes" ? "requested_changes" : action === "approve" ? "approved" : action === "publish" ? "published" : "rejected", "knowledge", item.id, item.title, {
       before: { status: item.status, version: item.version }, after: { status: patch.status, version: patch.version ?? item.version }, comment,
     });
     toast.success("Saved"); setSel(null);
     qc.invalidateQueries({ queryKey: ["review-queue"] });
+    qc.invalidateQueries({ queryKey: ["knowledge"] });
+    qc.invalidateQueries({ queryKey: ["module-builder-sources"] });
   }
 
   async function applySuggestion(text: string) { setBody((b) => `${b}\n\n${text}`); }

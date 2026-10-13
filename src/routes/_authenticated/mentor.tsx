@@ -15,7 +15,6 @@ export const Route = createFileRoute("/_authenticated/mentor")({
 });
 
 type Msg = { role: "user" | "assistant"; content: string; meta?: MentorAnswer; rated?: "up" | "down" };
-const KEY = "mentor-conversation";
 const SUGGEST = ["How many days of annual leave do I get?", "How do I set up VPN on day one?", "What are our company values?"];
 
 function Mentor() {
@@ -27,8 +26,8 @@ function Mentor() {
   const end = useRef<HTMLDivElement>(null);
   const ta = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => { try { setMsgs(JSON.parse(localStorage.getItem(KEY) ?? "[]")); } catch { /* empty */ } ta.current?.focus(); }, []);
-  useEffect(() => { localStorage.setItem(KEY, JSON.stringify(msgs)); end.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+  useEffect(() => { localStorage.removeItem("mentor-conversation"); ta.current?.focus(); }, []);
+  useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
   async function send(text: string) {
     const question = text.trim();

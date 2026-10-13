@@ -16,10 +16,12 @@ export function useMe() {
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Not signed in");
-      const [{ data: profile }, { data: roles }] = await Promise.all([
+      const [{ data: profile, error: profileError }, { data: roles, error: rolesError }] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", u.user.id).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", u.user.id),
       ]);
+      if (profileError) throw profileError;
+      if (rolesError) throw rolesError;
       const r = (roles ?? []).map((x) => x.role as AppRole);
       return {
         id: u.user.id,
