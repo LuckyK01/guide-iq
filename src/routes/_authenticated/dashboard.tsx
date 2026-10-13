@@ -89,6 +89,9 @@ function StaffView() {
         supabase.from("module_progress").select("user_id,state"),
         supabase.from("modules").select("id").eq("published", true),
       ]);
+      for (const result of [k, e, p, prog, mods]) {
+        if (result.error) throw result.error;
+      }
       return { k: k.data ?? [], e: e.data ?? [], p: p.data ?? [], prog: prog.data ?? [], total: mods.data?.length ?? 0 };
     },
   });
@@ -124,7 +127,7 @@ function StaffView() {
           )}
         </Panel>
         <Panel title="Unanswered questions (knowledge gaps)">
-          {data.e.length === 0 ? <Empty>No open escalations. The mentor is answering everything from approved knowledge.</Empty> : (
+          {data.e.length === 0 ? <Empty>No open escalations.</Empty> : (
             <ul className="divide-y">
               {data.e.map((x) => (
                 <li key={x.id} className="py-2.5 text-sm">

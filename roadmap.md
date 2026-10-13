@@ -1,4 +1,5 @@
 # Implementation roadmap
+- [ ] Audit implemented learner and admin workflows, fix confirmed errors, and run role-based browser checks without unnecessary AI calls.
 - [x] Expand local document extraction and preserve complete source text; real Word, multi-sheet Excel and two-page PDF browser checks passed.
 - [x] Generate detailed, source-grounded draft modules and assignments from multiple documents, enforcing 10–15 questions.
 - [x] Provide human editing and publication of generated modules and reuse unchanged results.

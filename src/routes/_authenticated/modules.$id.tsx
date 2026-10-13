@@ -7,6 +7,7 @@ import { Bot, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyModules, TRACK_LABEL, type Question } from "@/lib/learning";
 import { logAudit } from "@/lib/session";
+import { assessmentResult } from "@/lib/assessment-result";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Panel, StatusPill, Loading, Empty, Pill } from "@/components/app-ui";
@@ -18,39 +19,50 @@ export const Route = createFileRoute("/_authenticated/modules/$id")({
 
 function ModulePage() {
   const { id } = Route.useParams();
-  const { data: mods, isLoading } = useMyModules();
+  const { data: mods, isLoading, error } = useMyModules();
+  const [busy, setBusy] = useState(false);
   const qc = useQueryClient();
   const [answers, setAnswers] = useState<Record<number, number[]>>({});
   const [result, setResult] = useState<{ score: number; passed: boolean } | null>(null);
   if (isLoading) return <Loading />;
+  if (error) return <Empty>Unable to load your learning. Please reload and try again.</Empty>;
   const m = mods?.find((x) => x.id === id);
   if (!m) return <Empty>Module not found or not available to you.</Empty>;
 
   async function save(patch: Record<string, unknown>) {
-    const { data: u } = await supabase.auth.getUser();
-    const { error } = await supabase.from("module_progress").upsert({ user_id: u.user!.id, module_id: m!.id, updated_at: new Date().toISOString(), ...patch }, { onConflict: "user_id,module_id" });
+    if (!m) return false;
+    const { data: u, error: authError } = await supabase.auth.getUser();
+    if (authError || !u.user) { toast.error("Please sign in again."); return false; }
+    const { error } = await supabase.from("module_progress").upsert({ user_id: u.user.id, module_id: m.id, updated_at: new Date().toISOString(), ...patch }, { onConflict: "user_id,module_id" });
     if (error) { toast.error(error.message); return false; }
-    qc.invalidateQueries({ queryKey: ["my-modules"] });
+    await qc.invalidateQueries({ queryKey: ["my-modules"] });
     return true;
   }
 
   async function finishReading() {
-    if (await save({ state: m!.questions.length ? "assessment_pending" : "completed", progress: m!.questions.length ? 60 : 100, started_at: m!.p?.started_at ?? new Date().toISOString(), completed_at: m!.questions.length ? null : new Date().toISOString() }))
-      toast.success(m!.questions.length ? "Content complete — take the assessment below." : "Module completed");
+    if (!m || busy) return;
+    if (await save({ state: m.questions.length ? "assessment_pending" : "completed", progress: m.questions.length ? 60 : 100, started_at: m.p?.started_at ?? new Date().toISOString(), completed_at: m.questions.length ? null : new Date().toISOString() }))
+      toast.success(m.questions.length ? "Content complete — take the assessment below." : "Module completed");
   }
 
   async function submit() {
-    const qs = m!.questions;
+    if (!m || busy || !m.questions.length) return;
+    setBusy(true);
+    try {
+    const qs = m.questions;
     const correct = qs.filter((q, i) => {
       const a = [...(answers[i] ?? [])].sort().join(",");
       return a === [...q.answer].sort().join(",");
     }).length;
     const score = Math.round((correct / qs.length) * 100);
-    const passed = score >= m!.pass_mark;
-    const attempts = (m!.p?.attempts ?? 0) + 1;
-    await save({ score, attempts, state: passed ? "completed" : "assessment_pending", progress: passed ? 100 : 60, completed_at: passed ? new Date().toISOString() : null });
-    await logAudit("assessment_attempt", "module", m!.id, m!.title, { score, passed, attempts });
+    const passed = score >= m.pass_mark;
+    const patch = assessmentResult(score, m.pass_mark, m.p, new Date().toISOString());
+    if (!await save(patch)) return;
+    await logAudit("assessment_attempt", "module", m.id, m.title, { score, passed, attempts: patch.attempts });
     setResult({ score, passed });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unable to save assessment. Please try again.");
+    } finally { setBusy(false); }
   }
 
   const toggle = (qi: number, oi: number, q: Question) =>
@@ -105,8 +117,8 @@ function ModulePage() {
                   </fieldset>
                 ))}
               </div>
-              <Button className="mt-5" onClick={submit} disabled={m.questions.some((_, i) => !(answers[i]?.length))}>
-                {m.p?.attempts ? "Retry assessment" : "Submit assessment"}
+              <Button className="mt-5" onClick={submit} disabled={busy || m.questions.some((_, i) => !(answers[i]?.length))}>
+                {busy ? "Saving…" : m.p?.attempts ? "Retry assessment" : "Submit assessment"}
               </Button>
             </Panel>
           )}

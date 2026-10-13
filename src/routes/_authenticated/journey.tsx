@@ -19,7 +19,7 @@ function Journey() {
   ];
   return (
     <div>
-      <PageHeader title="My Journey" subtitle="Mandatory modules apply to everyone. Role and experience modules are tailored to your profile." />
+      <PageHeader title="My Journey" subtitle="Mandatory, role-based and experience-based learning tracks." />
       <div className="grid gap-6 lg:grid-cols-3">
         <Panel title="Profile" className="h-fit">
           <dl className="space-y-2 text-sm">

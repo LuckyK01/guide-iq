@@ -42,10 +42,11 @@ export const askMentor = createServerFn({ method: "POST" })
     }
 
     // Only published (approved) knowledge is retrieved — explicit filter regardless of role.
-    const [{ data: kb }, { data: mods }] = await Promise.all([
+    const [{ data: kb, error: knowledgeError }, { data: mods, error: modulesError }] = await Promise.all([
       supabase.from("knowledge_items").select("id,title,body,tags,version,category").eq("status", "published"),
       supabase.from("modules").select("id,title,description").eq("published", true),
     ]);
+    if (knowledgeError || modulesError) throw new Error("Approved knowledge could not be loaded. Please try again.");
     const words = data.question.toLowerCase().split(/\W+/).filter((w) => w.length > 2);
     const scored = (kb ?? [])
       .map((k) => {
@@ -65,16 +66,23 @@ If the knowledge does not answer the question, set "found" to false.
 Reply with JSON only: {"found":boolean,"answer":"markdown answer, concise","source_ids":["KB uuid"],"module_ids":["MOD uuid"],"confidence":0-1,"next_step":"one short recommended next step"}`;
     const prompt = `APPROVED KNOWLEDGE:\n${context_ || "(none matched)"}\n\nAVAILABLE MODULES:\n${modList}\n\nCONVERSATION SO FAR:\n${hist}\n\nQUESTION: ${data.question}`;
 
-    const raw = await runAI(system, prompt);
+    const escalate = async (reason: string, confidence = 0) => {
+      const { data: prof } = await supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle();
+      const { error } = await supabase.from("mentor_escalations").insert({ user_id: userId, user_name: prof?.full_name ?? null, question: data.question, reason });
+      if (error) throw new Error("Your question could not be sent for review. Please try again.");
+      await audit("ai_escalated", { model: AI_MODEL, confidence, reason });
+      return { answer: FALLBACK, sources: [], modules: [], confidence, escalated: true };
+    };
+    if (!scored.length) return escalate("No matching approved knowledge");
+    let raw: string;
+    try { raw = await runAI(system, prompt); }
+    catch { return escalate("AI service unavailable"); }
     const parsed = extractJson<{ found: boolean; answer: string; source_ids: string[]; module_ids: string[]; confidence: number; next_step?: string }>(raw);
     const threshold = 0.55;
     const ok = parsed && parsed.found && (parsed.confidence ?? 0) >= threshold && scored.length > 0;
 
     if (!ok) {
-      const { data: prof } = await supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle();
-      await supabase.from("mentor_escalations").insert({ user_id: userId, user_name: prof?.full_name ?? null, question: data.question, reason: parsed ? `low confidence (${parsed.confidence})` : "no answer" });
-      await audit("ai_escalated", { model: AI_MODEL, confidence: parsed?.confidence ?? 0 });
-      return { answer: FALLBACK, sources: [], modules: [], confidence: parsed?.confidence ?? 0, escalated: true };
+      return escalate(parsed ? `low confidence (${parsed.confidence})` : "no answer", parsed?.confidence ?? 0);
     }
     const sources = scored.filter((x) => parsed.source_ids?.includes(x.k.id)).map((x) => ({ id: x.k.id, title: x.k.title, version: x.k.version }));
     const modules = (mods ?? []).filter((m) => parsed.module_ids?.includes(m.id)).map((m) => ({ id: m.id, title: m.title }));
